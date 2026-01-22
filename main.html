@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bell Timer SE3</title>
+    <style>
+        :root {
+            --bg-color: #202124;
+            --panel-bg: #303134;
+            --text-color: #e8eaed;
+            --accent-color: #8ab4f8;
+            --danger-color: #f28b82;
+            --success-color: #81c995;
+            --border-color: #5f6368;
+            --disabled-color: #3c4043;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto Mono', monospace, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            height: 100vh; 
+            height: 100dvh; 
+            display: flex;
+            justify-content: center;
+            overflow: hidden; 
+        }
+
+        .container {
+            width: 375px; 
+            height: 100%;
+            background: var(--bg-color);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Settings Area: Removed Audio Input */
+        .settings-area {
+            background: #2b2c2f;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            border: 1px solid #3c4043;
+            flex-shrink: 0; 
+        }
+        
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .setting-row:last-child { margin-bottom: 0; }
+
+        .time-inputs {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        
+        input[type="number"] {
+            background: #202124;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 4px;
+            width: 40px;
+            text-align: right;
+            border-radius: 4px;
+            font-size: 1rem;
+            -moz-appearance: textfield;
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        /* Display Area */
+        .display-area {
+            text-align: center;
+            padding: 10px 0;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 120px; 
+        }
+        .main-time {
+            font-size: 5.5rem; 
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+            letter-spacing: -3px; 
+        }
+
+        /* Controls Grid */
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 50px 55px 45px; 
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .full-width { grid-column: span 2; }
+
+        button {
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: #202124;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+        }
+        button:active { opacity: 0.7; }
+        button:disabled { 
+            opacity: 0.4; 
+            background-color: var(--disabled-color);
+            color: #888;
+        }
+
+        .btn-start { background-color: var(--success-color); font-size: 1.1rem; }
+        .btn-stop { background-color: var(--danger-color); font-size: 1.1rem; color: #fff; }
+        .btn-reset { background-color: #5f6368; color: white; }
+        .btn-lap { background-color: var(--accent-color); font-size: 1.2rem; }
+        .btn-util { 
+            background: #3c4043; 
+            border: 1px solid var(--border-color); 
+            color: var(--text-color);
+            font-size: 0.85rem;
+        }
+
+        /* Output Area */
+        .output-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-height: 0; 
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%; 
+            background: #1a1a1c;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px;
+            font-family: 'Roboto Mono', monospace;
+            resize: none;
+            font-size: 0.85rem;
+            white-space: pre; 
+        }
+
+        .copy-btn {
+            background: #3c4043; 
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            width: 100%;
+            height: 40px;
+            flex-shrink: 0;
+            font-size: 0.9rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="settings-area">
+            <div class="setting-row">
+                <span>① 1回通知:</span>
+                <div class="time-inputs">
+                    <input type="number" id="t1-h" value="0" min="0"> :
+                    <input type="number" id="t1-m" value="0" min="0"> :
+                    <input type="number" id="t1-s" value="10" min="0">
+                </div>
+            </div>
+            
+            <div class="setting-row">
+                <span>② 2回通知:</span>
+                <div class="time-inputs">
+                    <input type="number" id="t2-h" value="0" min="0"> :
+                    <input type="number" id="t2-m" value="0" min="0"> :
+                    <input type="number" id="t2-s" value="20" min="0">
+                </div>
+            </div>
+        </div>
+
+        <div class="display-area">
+            <div class="main-time" id="disp-total">0:00</div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-start" id="btn-start" onclick="start()">スタート(S)</button>
+            <button class="btn-stop" id="btn-stop" onclick="stop()" style="display:none;">ストップ(S)</button>
+            <button class="btn-reset" id="btn-reset" onclick="reset()">リセット(R)</button>
+
+            <button class="btn-lap full-width" id="btn-lap" onclick="recordLap()" disabled>ラップ(Spc)</button>
+
+            <button class="btn-util" onclick="deleteLastLap()">削除(D)</button>
+            <button class="btn-util" onclick="skipLap()">空回し(E)</button>
+        </div>
+
+        <div class="output-wrapper">
+            <textarea id="output-log" readonly placeholder="No Lap Split"></textarea>
+            <button class="copy-btn" id="btn-copy" onclick="copyLog()">結果をコピー (C)</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 変数定義 ---
+        let startTime = 0;       
+        let elapsedTime = 0;     
+        let lapStartTime = 0;    
+        let intervalId = null;   
+        let laps = [];           
+        let lapCounter = 1;
+        let triggered1 = false;
+        let triggered2 = false;
+
+        // DOM要素
+        const dispTotal = document.getElementById('disp-total');
+        const btnStart = document.getElementById('btn-start');
+        const btnStop = document.getElementById('btn-stop');
+        const btnLap = document.getElementById('btn-lap');
+        const btnReset = document.getElementById('btn-reset');
+        const btnCopy = document.getElementById('btn-copy');
+        const logArea = document.getElementById('output-log');
+        const inputs = document.querySelectorAll('input[type="number"]');
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // --- キーボードイベント ---
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.code === 'Space') { e.preventDefault(); if (intervalId) recordLap(); }
+            if (e.code === 'KeyS') { e.preventDefault(); if (intervalId) stop(); else start(); }
+            if (e.code === 'KeyR') { e.preventDefault(); if (!intervalId) reset(); }
+            if (e.code === 'KeyD') { e.preventDefault(); deleteLastLap(); }
+            if (e.code === 'KeyE') { e.preventDefault(); skipLap(); }
+            if (e.code === 'KeyC') { e.preventDefault(); if (!intervalId) copyLog(); }
+        });
+
+        // --- ヘルパー関数 ---
+        function getTargetTimeMs(hId, mId, sId) {
+            const h = parseInt(document.getElementById(hId).value) || 0;
+            const m = parseInt(document.getElementById(mId).value) || 0;
+            const s = parseInt(document.getElementById(sId).value) || 0;
+            return (h * 3600 + m * 60 + s) * 1000;
+        }
+
+        function formatTimeDisplay(ms) {
+            const totalSec = Math.floor(ms / 1000);
+            const h = Math.floor(totalSec / 3600);
+            const remainder = totalSec % 3600;
+            const m = Math.floor(remainder / 60);
+            const s = remainder % 60;
+            const sStr = String(s).padStart(2, '0');
+            if (h > 0) {
+                const mStr = String(m).padStart(2, '0');
+                return `${h}:${mStr}:${sStr}`;
+            } else {
+                return `${m}:${sStr}`;
+            }
+        }
+
+        function formatTimeLog(ms) {
+            if (ms === null) return "--:--"; 
+            return formatTimeDisplay(ms);
+        }
+
+        // --- メイン処理 ---
+        function update() {
+            const now = Date.now();
+            const currentTotal = elapsedTime + (now - startTime); 
+            dispTotal.textContent = formatTimeDisplay(currentTotal);
+            checkAlarm(currentTotal);
+        }
+
+        function checkAlarm(totalMs) {
+            const t1 = getTargetTimeMs('t1-h', 't1-m', 't1-s');
+            const t2 = getTargetTimeMs('t2-h', 't2-m', 't2-s');
+            if (t1 > 0 && totalMs >= t1 && !triggered1) { triggered1 = true; playBell(1); }
+            if (t2 > 0 && totalMs >= t2 && !triggered2) { triggered2 = true; playBell(2); }
+        }
+
+        // --- ベル音生成 (Synthesized Bell) ---
+        function playBell(times) {
+            let played = 0;
+            function playOnce() {
+                if (played >= times) return;
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                // ベルっぽい音作り（高めの正弦波 + 減衰）
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1200, audioCtx.currentTime); // 1200Hz (高音)
+                
+                // エンベロープ（音量変化）
+                const now = audioCtx.currentTime;
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.8, now + 0.01); // アタック
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5); // ディケイ（余韻長め）
+                
+                osc.start(now);
+                osc.stop(now + 1.5);
+                
+                // 次の音へ
+                setTimeout(() => {
+                    played++;
+                    if (played < times) playOnce();
+                }, 800); // 繰り返し間隔
+            }
+            playOnce();
+        }
+
+        // --- 操作系 ---
+        function start() {
+            if (intervalId) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            startTime = Date.now();
+            intervalId = setInterval(update, 50); 
+            btnStart.style.display = 'none';
+            btnStop.style.display = 'flex'; 
+            btnLap.disabled = false;
+            btnReset.disabled = true;
+            inputs.forEach(i => i.disabled = true);
+            btnCopy.disabled = true;
+        }
+
+        function stop() {
+            if (!intervalId) return;
+            elapsedTime += Date.now() - startTime;
+            clearInterval(intervalId);
+            intervalId = null;
+            dispTotal.textContent = formatTimeDisplay(elapsedTime);
+            btnStart.style.display = 'flex';
+            btnStop.style.display = 'none';
+            btnLap.disabled = true;
+            btnReset.disabled = false;
+            inputs.forEach(i => i.disabled = false);
+            btnCopy.disabled = false;
+        }
+
+        function reset() {
+            if (intervalId) return;
+            if (!confirm("リセットしますか？")) return;
+            stop();
+            elapsedTime = 0; lapStartTime = 0; laps = []; lapCounter = 1;
+            triggered1 = false; triggered2 = false;
+            dispTotal.textContent = "0:00";
+            renderLog();
+            btnCopy.disabled = false;
+        }
+
+        function recordLap() {
+            if (!intervalId) return;
+            const now = Date.now();
+            const currentTotal = elapsedTime + (now - startTime);
+            const currentLap = currentTotal - lapStartTime;
+            laps.push({ count: lapCounter++, splitMs: currentTotal, lapMs: currentLap });
+            lapStartTime = currentTotal; 
+            renderLog();
+        }
+
+        function skipLap() {
+            laps.push({ count: lapCounter++, splitMs: null, lapMs: null });
+            renderLog();
+        }
+
+        function deleteLastLap() {
+            if (laps.length === 0) return;
+            laps.pop();
+            lapCounter = laps.length > 0 ? laps[laps.length - 1].count + 1 : 1;
+            renderLog();
+        }
+
+        function renderLog() {
+            const text = laps.map(l => {
+                if(l.splitMs === null) return `${l.count} --:-- --:--`;
+                return `${l.count} ${formatTimeLog(l.lapMs)} ${formatTimeLog(l.splitMs)}`;
+            }).join('\n');
+            logArea.value = text;
+            logArea.scrollTop = logArea.scrollHeight; 
+        }
+
+        function copyLog() {
+            if (intervalId) return;
+            logArea.select();
+            document.execCommand('copy');
+            logArea.blur();
+            window.getSelection().removeAllRanges();
+        }
+    </script>
+</body>
+</html>
