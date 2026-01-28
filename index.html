@@ -3,172 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bell Timer SE3</title>
+    <title>timer</title>
     <style>
+        /* --- CSS変数定義 --- */
         :root {
             --bg-color: #202124;
-            --panel-bg: #303134;
+            --container-bg: #2b2c2f;
             --text-color: #e8eaed;
             --accent-color: #8ab4f8;
             --danger-color: #f28b82;
             --success-color: #81c995;
             --border-color: #5f6368;
-            --disabled-color: #3c4043;
+            --disabled-color: #4a4d51; /* 無効時も少し明るく */
+            --menu-bg: rgba(43, 44, 47, 0.98);
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; touch-action: manipulation; }
 
         body {
             font-family: 'Roboto Mono', monospace, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            margin: 0;
-            padding: 0;
-            height: 100vh; 
-            height: 100dvh; 
-            display: flex;
-            justify-content: center;
-            overflow: hidden; 
+            margin: 0; padding: 0;
+            width: 100vw; height: 100dvh;
+            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
         }
 
+        /* --- コンテナ --- */
         .container {
-            width: 375px; 
-            height: 100%;
-            background: var(--bg-color);
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            width: 100%; height: 100%;
+            background: var(--container-bg);
+            display: flex; flex-direction: column;
+            padding: 16px 20px;
+            position: relative;
+            max-width: 420px; max-height: 900px;
         }
 
-        /* Settings Area: Removed Audio Input */
-        .settings-area {
-            background: #2b2c2f;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            border: 1px solid #3c4043;
-            flex-shrink: 0; 
+        @media (min-width: 450px) {
+            .container {
+                height: 95%;
+                border-radius: 24px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                border: 1px solid #3c4043;
+                padding: 24px;
+            }
+        }
+
+        /* --- ヘッダー（アイコン類） --- */
+        .top-bar {
+            display: flex; justify-content: flex-end; align-items: center;
+            height: 30px; flex-shrink: 0; z-index: 200;
+            margin-bottom: 5px; gap: 15px;
         }
         
+        .icon-btn {
+            background: none; border: none; color: var(--text-color);
+            cursor: pointer; padding: 0;
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .icon-btn:active { transform: scale(0.9); }
+        .icon-btn svg { width: 26px; height: 26px; fill: currentColor; }
+        
+        .btn-test-bell:hover { color: var(--accent-color); }
+
+        /* --- 設定メニュー --- */
+        .settings-menu {
+            position: absolute; top: 50px; right: 16px;
+            width: 300px; max-width: 90%;
+            background: var(--menu-bg);
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+            z-index: 100;
+            opacity: 0; pointer-events: none;
+            transform: translateY(-10px) scale(0.98);
+            transition: all 0.15s ease-out; transform-origin: top right;
+        }
+        .settings-menu.active { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+
         .setting-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 12px;
         }
         .setting-row:last-child { margin-bottom: 0; }
+        .label-group { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+        .radio-group { display: flex; gap: 12px; font-size: 0.9rem; }
+        .radio-label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
 
-        .time-inputs {
-            display: flex;
-            align-items: center;
-            gap: 2px;
-        }
+        /* --- 入力フォーム --- */
+        input[type="checkbox"] { transform: scale(1.3); cursor: pointer; accent-color: var(--success-color); }
+        input[type="radio"] { accent-color: var(--accent-color); transform: scale(1.2); }
         
+        .time-inputs { display: flex; align-items: center; gap: 3px; }
         input[type="number"] {
-            background: #202124;
-            border: 1px solid var(--border-color);
-            color: white;
-            padding: 4px;
-            width: 40px;
-            text-align: right;
-            border-radius: 4px;
-            font-size: 1rem;
-            -moz-appearance: textfield;
+            background: #202124; border: 1px solid var(--border-color); color: white;
+            padding: 6px; width: 44px; text-align: center;
+            border-radius: 6px; font-size: 1rem;
+            -moz-appearance: textfield; ime-mode: disabled;
         }
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"]:focus { outline: none; border-color: var(--accent-color); background: #3c4043; }
 
-        /* Display Area */
+        /* --- メイン表示 --- */
         .display-area {
-            text-align: center;
-            padding: 10px 0;
-            flex-shrink: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 120px; 
+            text-align: center; 
+            flex-shrink: 0; flex-grow: 0;
+            display: flex; justify-content: center; align-items: center;
+            padding: 30px 0 40px 0; min-height: 120px;
         }
         .main-time {
-            font-size: 5.5rem; 
+            font-size: clamp(3.5rem, 15vw, 5.5rem);
             font-weight: bold;
-            font-variant-numeric: tabular-nums;
-            line-height: 1;
-            letter-spacing: -3px; 
+            font-variant-numeric: tabular-nums; 
+            line-height: 1; letter-spacing: -2px;
         }
 
-        /* Controls Grid */
+        /* --- 操作ボタン --- */
         .controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 50px 55px 45px; 
-            gap: 8px;
-            flex-shrink: 0;
+            display: grid; grid-template-columns: 1fr 1fr;
+            grid-template-rows: 60px 60px 60px;
+            gap: 12px; flex-shrink: 0; margin-bottom: 12px;
         }
         .full-width { grid-column: span 2; }
 
-        button {
-            border: none;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            font-weight: bold;
-            cursor: pointer;
-            color: #202124;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 0;
+        button.ctrl-btn {
+            border: none; border-radius: 12px;
+            font-size: 1.1rem; font-weight: bold; cursor: pointer;
+            color: #202124; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0; transition: opacity 0.1s, transform 0.05s;
         }
-        button:active { opacity: 0.7; }
-        button:disabled { 
-            opacity: 0.4; 
-            background-color: var(--disabled-color);
-            color: #888;
+        button.ctrl-btn:active { opacity: 0.8; transform: scale(0.98); }
+        
+        /* 無効時のスタイル修正: 明るさを維持 */
+        button.ctrl-btn:disabled { 
+            opacity: 0.6; /* 以前の0.3から上げて明るく */
+            background-color: var(--disabled-color); 
+            color: #ccc; /* 文字色も少し明るく */
+            pointer-events: none; 
         }
 
-        .btn-start { background-color: var(--success-color); font-size: 1.1rem; }
-        .btn-stop { background-color: var(--danger-color); font-size: 1.1rem; color: #fff; }
-        .btn-reset { background-color: #5f6368; color: white; }
-        .btn-lap { background-color: var(--accent-color); font-size: 1.2rem; }
+        .btn-start { background-color: var(--success-color); }
+        .btn-stop { background-color: var(--danger-color); color: #fff; }
+        .btn-lap { background-color: var(--accent-color); }
+
+        /* グレー系ボタンを明るく変更 */
+        .btn-reset { 
+            background-color: #70757a; /* 明るめのグレー */
+            color: white; 
+        }
         .btn-util { 
-            background: #3c4043; 
-            border: 1px solid var(--border-color); 
-            color: var(--text-color);
-            font-size: 0.85rem;
+            background: #505459; /* 暗すぎないグレー */
+            border: 1px solid #5f6368; 
+            color: #fff; 
         }
 
-        /* Output Area */
+        /* --- ログ表示 --- */
         .output-wrapper {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            min-height: 0; 
+            flex: 1; display: flex; flex-direction: column;
+            gap: 10px; min-height: 0; overflow: hidden;
         }
-
         textarea {
-            width: 100%;
-            height: 100%; 
-            background: #1a1a1c;
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 8px;
-            font-family: 'Roboto Mono', monospace;
-            resize: none;
-            font-size: 0.85rem;
-            white-space: pre; 
+            width: 100%; height: 100%;
+            background: #1a1a1c; color: var(--text-color);
+            border: 1px solid var(--border-color); border-radius: 12px;
+            padding: 12px; font-family: 'Roboto Mono', monospace;
+            resize: none; font-size: 0.95rem;
+            white-space: pre; overflow-y: auto;
         }
-
+        
+        /* コピーボタンも明るく */
         .copy-btn {
-            background: #3c4043; 
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            width: 100%;
-            height: 40px;
-            flex-shrink: 0;
-            font-size: 0.9rem;
+            background: #505459; /* utilと同じ明るさ */
+            border: 1px solid #5f6368;
+            color: #fff; width: 100%; height: 60px;
+            flex-shrink: 0; border-radius: 12px; font-size: 1.1rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        /* コピーボタン無効時 */
+        .copy-btn:disabled {
+            opacity: 0.6;
+            background-color: var(--disabled-color);
+            color: #ccc;
+            pointer-events: none;
         }
 
     </style>
@@ -177,22 +198,58 @@
 
     <div class="container">
         
-        <div class="settings-area">
+        <div class="top-bar">
+            <button class="icon-btn btn-test-bell" id="btn-test-bell" title="ベル音テスト">
+                <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
+            </button>
+            <button class="icon-btn btn-settings" id="btn-settings" title="設定">
+                <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            </button>
+        </div>
+
+        <div class="settings-menu" id="settings-menu">
             <div class="setting-row">
-                <span>① 1回通知:</span>
-                <div class="time-inputs">
-                    <input type="number" id="t1-h" value="0" min="0"> :
-                    <input type="number" id="t1-m" value="0" min="0"> :
-                    <input type="number" id="t1-s" value="10" min="0">
+                <span>カウント開始</span>
+                <div class="radio-group">
+                    <label class="radio-label"><input type="radio" name="start-cnt" value="1" checked> 1から</label>
+                    <label class="radio-label"><input type="radio" name="start-cnt" value="0"> 0から</label>
+                </div>
+            </div>
+            <hr style="border: 0; border-top: 1px solid #444; margin: 12px 0;">
+
+            <div class="setting-row">
+                <div class="label-group">
+                    <input type="checkbox" id="sw-1">
+                    <span>1鈴</span>
+                </div>
+                <div class="time-inputs" data-target="1">
+                    <input type="number" data-type="h" value="0" placeholder="0" data-max="9" data-len="1" data-next="m"> :
+                    <input type="number" data-type="m" value="12" placeholder="00" data-max="59" data-len="2" data-next="s"> :
+                    <input type="number" data-type="s" value="0" placeholder="00" data-max="59" data-len="2">
                 </div>
             </div>
             
             <div class="setting-row">
-                <span>② 2回通知:</span>
-                <div class="time-inputs">
-                    <input type="number" id="t2-h" value="0" min="0"> :
-                    <input type="number" id="t2-m" value="0" min="0"> :
-                    <input type="number" id="t2-s" value="20" min="0">
+                <div class="label-group">
+                    <input type="checkbox" id="sw-2">
+                    <span>2鈴</span>
+                </div>
+                <div class="time-inputs" data-target="2">
+                    <input type="number" data-type="h" value="0" placeholder="0" data-max="9" data-len="1" data-next="m"> :
+                    <input type="number" data-type="m" value="15" placeholder="00" data-max="59" data-len="2" data-next="s"> :
+                    <input type="number" data-type="s" value="0" placeholder="00" data-max="59" data-len="2">
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <div class="label-group">
+                    <input type="checkbox" id="sw-3">
+                    <span>3鈴</span>
+                </div>
+                <div class="time-inputs" data-target="3">
+                    <input type="number" data-type="h" value="0" placeholder="0" data-max="9" data-len="1" data-next="m"> :
+                    <input type="number" data-type="m" value="30" placeholder="00" data-max="59" data-len="2" data-next="s"> :
+                    <input type="number" data-type="s" value="0" placeholder="00" data-max="59" data-len="2">
                 </div>
             </div>
         </div>
@@ -202,210 +259,377 @@
         </div>
 
         <div class="controls">
-            <button class="btn-start" id="btn-start" onclick="start()">スタート(S)</button>
-            <button class="btn-stop" id="btn-stop" onclick="stop()" style="display:none;">ストップ(S)</button>
-            <button class="btn-reset" id="btn-reset" onclick="reset()">リセット(R)</button>
+            <button class="ctrl-btn btn-start" id="btn-start">スタート(S)</button>
+            <button class="ctrl-btn btn-stop" id="btn-stop" style="display:none;">ストップ(S)</button>
+            <button class="ctrl-btn btn-reset" id="btn-reset">リセット(R)</button>
 
-            <button class="btn-lap full-width" id="btn-lap" onclick="recordLap()" disabled>ラップ(Spc)</button>
+            <button class="ctrl-btn btn-lap full-width" id="btn-lap" disabled>ラップ(Spc)</button>
 
-            <button class="btn-util" onclick="deleteLastLap()">削除(D)</button>
-            <button class="btn-util" onclick="skipLap()">空回し(E)</button>
+            <button class="ctrl-btn btn-util" id="btn-delete">削除(D)</button>
+            <button class="ctrl-btn btn-util" id="btn-skip">空回し(E)</button>
         </div>
 
         <div class="output-wrapper">
             <textarea id="output-log" readonly placeholder="No Lap Split"></textarea>
-            <button class="copy-btn" id="btn-copy" onclick="copyLog()">結果をコピー (C)</button>
+            <button class="copy-btn" id="btn-copy">結果をコピー (C)</button>
         </div>
 
     </div>
 
     <script>
-        // --- 変数定義 ---
-        let startTime = 0;       
-        let elapsedTime = 0;     
-        let lapStartTime = 0;    
-        let intervalId = null;   
-        let laps = [];           
-        let lapCounter = 1;
-        let triggered1 = false;
-        let triggered2 = false;
+        /**
+         * ---------------------------------------------------
+         * TimeUtils: 時間計算用ユーティリティ
+         * ---------------------------------------------------
+         */
+        class TimeUtils {
+            static formatDisplay(ms) {
+                const totalSec = Math.floor(ms / 1000);
+                const h = Math.floor(totalSec / 3600);
+                const remainder = totalSec % 3600;
+                const m = Math.floor(remainder / 60);
+                const s = remainder % 60;
+                
+                const sStr = String(s).padStart(2, '0');
+                if (h > 0) {
+                    const mStr = String(m).padStart(2, '0');
+                    return `${h}:${mStr}:${sStr}`;
+                } else {
+                    return `${m}:${sStr}`;
+                }
+            }
 
-        // DOM要素
-        const dispTotal = document.getElementById('disp-total');
-        const btnStart = document.getElementById('btn-start');
-        const btnStop = document.getElementById('btn-stop');
-        const btnLap = document.getElementById('btn-lap');
-        const btnReset = document.getElementById('btn-reset');
-        const btnCopy = document.getElementById('btn-copy');
-        const logArea = document.getElementById('output-log');
-        const inputs = document.querySelectorAll('input[type="number"]');
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            static formatLog(ms) {
+                if (ms === null) return "--:--";
+                return this.formatDisplay(ms);
+            }
 
-        // --- キーボードイベント ---
-        document.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            if (e.code === 'Space') { e.preventDefault(); if (intervalId) recordLap(); }
-            if (e.code === 'KeyS') { e.preventDefault(); if (intervalId) stop(); else start(); }
-            if (e.code === 'KeyR') { e.preventDefault(); if (!intervalId) reset(); }
-            if (e.code === 'KeyD') { e.preventDefault(); deleteLastLap(); }
-            if (e.code === 'KeyE') { e.preventDefault(); skipLap(); }
-            if (e.code === 'KeyC') { e.preventDefault(); if (!intervalId) copyLog(); }
+            static getTargetMs(targetNum) {
+                const parent = document.querySelector(`.time-inputs[data-target="${targetNum}"]`);
+                const h = parseInt(parent.querySelector('[data-type="h"]').value) || 0;
+                const m = parseInt(parent.querySelector('[data-type="m"]').value) || 0;
+                const s = parseInt(parent.querySelector('[data-type="s"]').value) || 0;
+                return (h * 3600 + m * 60 + s) * 1000;
+            }
+        }
+
+        /**
+         * ---------------------------------------------------
+         * BellSound: ベル音生成クラス
+         * ---------------------------------------------------
+         */
+        class BellSound {
+            constructor() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            resume() {
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+            }
+
+            play(times) {
+                this.resume(); 
+                let played = 0;
+                const playOnce = () => {
+                    if (played >= times) return;
+                    
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
+                    
+                    const now = this.ctx.currentTime;
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(0.8, now + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+                    
+                    osc.start(now);
+                    osc.stop(now + 1.5);
+                    
+                    setTimeout(() => {
+                        played++;
+                        if (played < times) playOnce();
+                    }, 800);
+                };
+                playOnce();
+            }
+        }
+
+        /**
+         * ---------------------------------------------------
+         * StopwatchApp: メインアプリクラス
+         * ---------------------------------------------------
+         */
+        class StopwatchApp {
+            constructor() {
+                // --- 状態 ---
+                this.startTime = 0;
+                this.elapsedTime = 0;
+                this.lapStartTime = 0;
+                this.intervalId = null;
+                this.laps = []; 
+                this.triggered = { 1: false, 2: false, 3: false };
+
+                // --- モジュール ---
+                this.sound = new BellSound();
+
+                // --- UI要素 ---
+                this.ui = {
+                    total: document.getElementById('disp-total'),
+                    start: document.getElementById('btn-start'),
+                    stop: document.getElementById('btn-stop'),
+                    lap: document.getElementById('btn-lap'),
+                    reset: document.getElementById('btn-reset'),
+                    delete: document.getElementById('btn-delete'),
+                    skip: document.getElementById('btn-skip'),
+                    copy: document.getElementById('btn-copy'),
+                    log: document.getElementById('output-log'),
+                    settingsBtn: document.getElementById('btn-settings'),
+                    testBellBtn: document.getElementById('btn-test-bell'),
+                    settingsMenu: document.getElementById('settings-menu'),
+                    inputs: document.querySelectorAll('input'),
+                    radioStart: document.getElementsByName('start-cnt'),
+                    switches: {
+                        1: document.getElementById('sw-1'),
+                        2: document.getElementById('sw-2'),
+                        3: document.getElementById('sw-3')
+                    }
+                };
+
+                this._init();
+            }
+
+            _init() {
+                this._bindEvents();
+                this._setupInputBehavior();
+                this.ui.copy.disabled = true;
+            }
+
+            // --- アクション ---
+
+            start() {
+                if (this.intervalId) return;
+                this.sound.resume();
+
+                this.startTime = Date.now();
+                this.intervalId = setInterval(() => this._tick(), 50);
+
+                this._updateUIState(true);
+            }
+
+            stop() {
+                if (!this.intervalId) return;
+                this.elapsedTime += Date.now() - this.startTime;
+                clearInterval(this.intervalId);
+                this.intervalId = null;
+
+                this.ui.total.textContent = TimeUtils.formatDisplay(this.elapsedTime);
+                this._updateUIState(false);
+            }
+
+            reset() {
+                if (this.intervalId) return;
+                if (!confirm("リセットしますか？")) return;
+
+                this.stop();
+                this.elapsedTime = 0;
+                this.lapStartTime = 0;
+                this.laps = [];
+                this.triggered = { 1: false, 2: false, 3: false };
+                
+                this.ui.total.textContent = "0:00";
+                this._renderLog();
+                this.ui.copy.disabled = false;
+            }
+
+            recordLap() {
+                if (!this.intervalId) return;
+                const now = Date.now();
+                const currentTotal = this.elapsedTime + (now - this.startTime);
+                const currentLap = currentTotal - this.lapStartTime;
+                
+                this.laps.push({ 
+                    splitMs: currentTotal, 
+                    lapMs: currentLap 
+                });
+                
+                // 次のラップの基準点を更新
+                this.lapStartTime = currentTotal;
+                this._renderLog();
+            }
+
+            skipLap() {
+                this.laps.push({ 
+                    splitMs: null, 
+                    lapMs: null 
+                });
+                this._renderLog();
+            }
+
+            deleteLastLap() {
+                if (this.laps.length === 0) return;
+                
+                this.laps.pop();
+
+                // 削除後、基準点(lapStartTime)を再計算
+                // 有効な(splitMsを持つ)ラップが見つかれば、その終了時間を次の基準点にする
+                let newAnchor = 0;
+                for (let i = this.laps.length - 1; i >= 0; i--) {
+                    if (this.laps[i].splitMs !== null) {
+                        newAnchor = this.laps[i].splitMs;
+                        break;
+                    }
+                }
+                
+                this.lapStartTime = newAnchor;
+                this._renderLog();
+            }
+
+            copyLog() {
+                if (this.intervalId) return;
+                this.ui.log.select();
+                document.execCommand('copy');
+                this.ui.log.blur();
+                window.getSelection().removeAllRanges();
+            }
+
+            // --- 内部処理 ---
+
+            _tick() {
+                const now = Date.now();
+                const currentTotal = this.elapsedTime + (now - this.startTime);
+                this.ui.total.textContent = TimeUtils.formatDisplay(currentTotal);
+                this._checkAlarm(currentTotal);
+            }
+
+            _checkAlarm(totalMs) {
+                [1, 2, 3].forEach(num => {
+                    // 入力欄が操作可能なので、毎回現在の設定値を取得する
+                    if (this.ui.switches[num].checked && !this.triggered[num]) {
+                        const targetTime = TimeUtils.getTargetMs(num);
+                        if (targetTime > 0 && totalMs >= targetTime) {
+                            this.triggered[num] = true;
+                            this.sound.play(num);
+                        }
+                    }
+                });
+            }
+
+            _getStartCountValue() {
+                for (const r of this.ui.radioStart) {
+                    if (r.checked) return parseInt(r.value);
+                }
+                return 1;
+            }
+
+            _updateUIState(isRunning) {
+                this.ui.start.style.display = isRunning ? 'none' : 'flex';
+                this.ui.stop.style.display = isRunning ? 'flex' : 'none';
+                
+                this.ui.lap.disabled = !isRunning;
+                this.ui.reset.disabled = isRunning;
+                this.ui.copy.disabled = isRunning;
+            }
+
+            _renderLog() {
+                const startNum = this._getStartCountValue();
+
+                const text = this.laps.map((l, index) => {
+                    const count = String(startNum + index).padStart(2, ' ');
+                    if (l.splitMs === null) return `${count} --:-- --:--`;
+                    return `${count} ${TimeUtils.formatLog(l.lapMs)} ${TimeUtils.formatLog(l.splitMs)}`;
+                }).join('\n');
+                
+                this.ui.log.value = text;
+                this.ui.log.scrollTop = this.ui.log.scrollHeight;
+            }
+
+            // --- イベントバインド ---
+
+            _bindEvents() {
+                this.ui.start.onclick = () => this.start();
+                this.ui.stop.onclick = () => this.stop();
+                this.ui.reset.onclick = () => this.reset();
+                this.ui.lap.onclick = () => this.recordLap();
+                this.ui.delete.onclick = () => this.deleteLastLap();
+                this.ui.skip.onclick = () => this.skipLap();
+                this.ui.copy.onclick = () => this.copyLog();
+
+                this.ui.testBellBtn.onclick = () => {
+                    this.sound.play(1);
+                };
+
+                this.ui.settingsBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.ui.settingsMenu.classList.toggle('active');
+                };
+                document.addEventListener('click', (e) => {
+                    if (!this.ui.settingsMenu.contains(e.target) && 
+                        !this.ui.settingsBtn.contains(e.target) &&
+                        !this.ui.testBellBtn.contains(e.target)) {
+                        this.ui.settingsMenu.classList.remove('active');
+                    }
+                });
+
+                this.ui.radioStart.forEach(r => {
+                    r.onchange = () => {
+                        this._renderLog();
+                    };
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                    
+                    const map = {
+                        'Space': () => { if (this.intervalId) this.recordLap(); },
+                        'KeyS': () => { this.intervalId ? this.stop() : this.start(); },
+                        'KeyR': () => { if (!this.intervalId) this.reset(); },
+                        'KeyD': () => this.deleteLastLap(),
+                        'KeyE': () => this.skipLap(),
+                        'KeyC': () => { if (!this.intervalId) this.copyLog(); }
+                    };
+
+                    if (map[e.code]) {
+                        e.preventDefault();
+                        map[e.code]();
+                    }
+                });
+            }
+
+            _setupInputBehavior() {
+                const numberInputs = document.querySelectorAll('input[type="number"]');
+                numberInputs.forEach(input => {
+                    input.addEventListener('input', function() {
+                        const maxVal = parseInt(this.getAttribute('data-max'));
+                        const maxLen = parseInt(this.getAttribute('data-len'));
+                        const nextType = this.getAttribute('data-next');
+
+                        if (parseInt(this.value) > maxVal) this.value = maxVal;
+                        if (this.value.length > maxLen) this.value = this.value.slice(0, maxLen);
+                        
+                        if (this.value.length >= maxLen) {
+                            if (nextType) {
+                                const parent = this.closest('.time-inputs');
+                                const nextInput = parent.querySelector(`[data-type="${nextType}"]`);
+                                if (nextInput) { nextInput.focus(); nextInput.select(); }
+                            } else {
+                                this.blur();
+                            }
+                        }
+                    });
+                    input.addEventListener('focus', function() { this.select(); });
+                });
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            new StopwatchApp();
         });
 
-        // --- ヘルパー関数 ---
-        function getTargetTimeMs(hId, mId, sId) {
-            const h = parseInt(document.getElementById(hId).value) || 0;
-            const m = parseInt(document.getElementById(mId).value) || 0;
-            const s = parseInt(document.getElementById(sId).value) || 0;
-            return (h * 3600 + m * 60 + s) * 1000;
-        }
-
-        function formatTimeDisplay(ms) {
-            const totalSec = Math.floor(ms / 1000);
-            const h = Math.floor(totalSec / 3600);
-            const remainder = totalSec % 3600;
-            const m = Math.floor(remainder / 60);
-            const s = remainder % 60;
-            const sStr = String(s).padStart(2, '0');
-            if (h > 0) {
-                const mStr = String(m).padStart(2, '0');
-                return `${h}:${mStr}:${sStr}`;
-            } else {
-                return `${m}:${sStr}`;
-            }
-        }
-
-        function formatTimeLog(ms) {
-            if (ms === null) return "--:--"; 
-            return formatTimeDisplay(ms);
-        }
-
-        // --- メイン処理 ---
-        function update() {
-            const now = Date.now();
-            const currentTotal = elapsedTime + (now - startTime); 
-            dispTotal.textContent = formatTimeDisplay(currentTotal);
-            checkAlarm(currentTotal);
-        }
-
-        function checkAlarm(totalMs) {
-            const t1 = getTargetTimeMs('t1-h', 't1-m', 't1-s');
-            const t2 = getTargetTimeMs('t2-h', 't2-m', 't2-s');
-            if (t1 > 0 && totalMs >= t1 && !triggered1) { triggered1 = true; playBell(1); }
-            if (t2 > 0 && totalMs >= t2 && !triggered2) { triggered2 = true; playBell(2); }
-        }
-
-        // --- ベル音生成 (Synthesized Bell) ---
-        function playBell(times) {
-            let played = 0;
-            function playOnce() {
-                if (played >= times) return;
-                
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                
-                // ベルっぽい音作り（高めの正弦波 + 減衰）
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(1200, audioCtx.currentTime); // 1200Hz (高音)
-                
-                // エンベロープ（音量変化）
-                const now = audioCtx.currentTime;
-                gain.gain.setValueAtTime(0, now);
-                gain.gain.linearRampToValueAtTime(0.8, now + 0.01); // アタック
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5); // ディケイ（余韻長め）
-                
-                osc.start(now);
-                osc.stop(now + 1.5);
-                
-                // 次の音へ
-                setTimeout(() => {
-                    played++;
-                    if (played < times) playOnce();
-                }, 800); // 繰り返し間隔
-            }
-            playOnce();
-        }
-
-        // --- 操作系 ---
-        function start() {
-            if (intervalId) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            startTime = Date.now();
-            intervalId = setInterval(update, 50); 
-            btnStart.style.display = 'none';
-            btnStop.style.display = 'flex'; 
-            btnLap.disabled = false;
-            btnReset.disabled = true;
-            inputs.forEach(i => i.disabled = true);
-            btnCopy.disabled = true;
-        }
-
-        function stop() {
-            if (!intervalId) return;
-            elapsedTime += Date.now() - startTime;
-            clearInterval(intervalId);
-            intervalId = null;
-            dispTotal.textContent = formatTimeDisplay(elapsedTime);
-            btnStart.style.display = 'flex';
-            btnStop.style.display = 'none';
-            btnLap.disabled = true;
-            btnReset.disabled = false;
-            inputs.forEach(i => i.disabled = false);
-            btnCopy.disabled = false;
-        }
-
-        function reset() {
-            if (intervalId) return;
-            if (!confirm("リセットしますか？")) return;
-            stop();
-            elapsedTime = 0; lapStartTime = 0; laps = []; lapCounter = 1;
-            triggered1 = false; triggered2 = false;
-            dispTotal.textContent = "0:00";
-            renderLog();
-            btnCopy.disabled = false;
-        }
-
-        function recordLap() {
-            if (!intervalId) return;
-            const now = Date.now();
-            const currentTotal = elapsedTime + (now - startTime);
-            const currentLap = currentTotal - lapStartTime;
-            laps.push({ count: lapCounter++, splitMs: currentTotal, lapMs: currentLap });
-            lapStartTime = currentTotal; 
-            renderLog();
-        }
-
-        function skipLap() {
-            laps.push({ count: lapCounter++, splitMs: null, lapMs: null });
-            renderLog();
-        }
-
-        function deleteLastLap() {
-            if (laps.length === 0) return;
-            laps.pop();
-            lapCounter = laps.length > 0 ? laps[laps.length - 1].count + 1 : 1;
-            renderLog();
-        }
-
-        function renderLog() {
-            const text = laps.map(l => {
-                if(l.splitMs === null) return `${l.count} --:-- --:--`;
-                return `${l.count} ${formatTimeLog(l.lapMs)} ${formatTimeLog(l.splitMs)}`;
-            }).join('\n');
-            logArea.value = text;
-            logArea.scrollTop = logArea.scrollHeight; 
-        }
-
-        function copyLog() {
-            if (intervalId) return;
-            logArea.select();
-            document.execCommand('copy');
-            logArea.blur();
-            window.getSelection().removeAllRanges();
-        }
     </script>
 </body>
 </html>
